@@ -96,6 +96,8 @@
       nav button { flex: 1; padding: 11px 7px; }
     }
   </style>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#111827">
 </head>
 <body>
 
@@ -473,6 +475,14 @@
   $('date').value = new Date().toLocaleDateString('en-CA');
 
   checkSession();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js")
+        .catch(error => console.error("Service Worker:", error));
+    });
+  }
 </script>
 </body>
           </html>
