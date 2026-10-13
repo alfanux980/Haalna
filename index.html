@@ -1,0 +1,479 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>Kas Usaha</title>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      color: #1f2937;
+    }
+    header {
+      background: #111827;
+      color: white;
+      padding: 20px 16px;
+    }
+    header h2 { margin: 0 0 6px; }
+    header p { margin: 0; color: #cbd5e1; font-size: 13px; }
+    main { max-width: 1050px; margin: auto; padding: 16px; }
+    .panel, .stat {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+      border: 1px solid #e5e7eb;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .stat small { color: #6b7280; display: block; }
+    .stat strong {
+      display: block;
+      margin-top: 9px;
+      font-size: clamp(15px, 3vw, 23px);
+      overflow-wrap: anywhere;
+    }
+    nav { display: flex; gap: 8px; margin-bottom: 16px; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 14px;
+      cursor: pointer;
+      background: #e5e7eb;
+      color: #111827;
+      font-weight: 600;
+    }
+    button.primary { background: #111827; color: white; }
+    button.danger { background: #fee2e2; color: #991b1b; }
+    button:disabled { opacity: .5; cursor: wait; }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 7px 0 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+    }
+    label { font-size: 14px; font-weight: 600; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td {
+      padding: 11px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: right;
+      white-space: nowrap;
+    }
+    th { background: #f9fafb; }
+    th:first-child, td:first-child { text-align: left; }
+    tfoot { font-weight: bold; background: #f3f4f6; }
+    .actions { display: flex; gap: 6px; }
+    .actions button { padding: 8px; }
+    .muted { color: #6b7280; font-size: 13px; }
+    .hidden { display: none !important; }
+    #message { margin: 10px 0; font-size: 14px; }
+    .error { color: #b91c1c; }
+    .success { color: #047857; }
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; gap: 0; }
+      main { padding: 10px; }
+      header { padding: 17px 12px; }
+      nav button { flex: 1; padding: 11px 7px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h2>Kas Usaha</h2>
+  <p>Dashboard dan laporan keuangan</p>
+</header>
+
+<main>
+  <section id="loginPanel" class="panel">
+    <h3>Login</h3>
+    <p class="muted">Masuk menggunakan akun Supabase yang sudah dibuat.</p>
+    <form id="loginForm">
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="username" required>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button class="primary" type="submit">Masuk</button>
+    </form>
+  </section>
+
+  <section id="app" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px">
+      <span id="userLabel" class="muted">Terhubung</span>
+      <button id="logoutBtn">Keluar</button>
+    </div>
+
+    <nav>
+      <button id="dashboardTab" class="primary">Dashboard</button>
+      <button id="reportTab">Laporan Arus Kas</button>
+    </nav>
+
+    <section id="dashboardPage">
+      <div class="stats">
+        <div class="stat">
+          <small>Total Omzet</small>
+          <strong id="totalOmzet">Rp0</strong>
+        </div>
+        <div class="stat">
+          <small>Total Dana Pengembangan</small>
+          <strong id="totalDevelopment">Rp0</strong>
+        </div>
+        <div class="stat">
+          <small>Total Satu Porsi Saham (4%)</small>
+          <strong id="totalShare">Rp0</strong>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 id="formTitle">Input Omzet</h3>
+        <form id="transactionForm">
+          <div class="form-grid">
+            <div>
+              <label for="date">Tanggal</label>
+              <input id="date" type="date" required>
+            </div>
+            <div>
+              <label for="omzet">Nominal Omzet (Rp)</label>
+              <input id="omzet" type="number" min="0" step="1"
+                placeholder="Contoh: 500000" required>
+            </div>
+          </div>
+          <button class="primary" id="saveBtn" type="submit">Simpan Omzet</button>
+          <button id="cancelEditBtn" class="hidden" type="button">Batal Edit</button>
+          <p class="muted">Satu tanggal hanya memiliki satu catatan omzet. Jika tanggal yang sama disimpan lagi, nominal sebelumnya akan diperbarui.</p>
+        </form>
+      </div>
+    </section>
+
+    <section id="reportPage" class="hidden">
+      <div class="panel">
+        <h3>Laporan Arus Kas</h3>
+        <p class="muted">Operasional dipotong terlebih dahulu, kemudian sisa dana dibagi sesuai persentase.</p>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Omzet</th>
+                <th>Operasional</th>
+                <th>Modal 60%</th>
+                <th>Handle Toko 20%</th>
+                <th>Pengembangan 8%</th>
+                <th>Saham Hari 4%</th>
+                <th>Saham Alfan 4%</th>
+                <th>Saham Nadhir 4%</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="reportBody"></tbody>
+            <tfoot id="reportFoot"></tfoot>
+          </table>
+        </div>
+        <p id="emptyReport" class="muted hidden">Belum ada data omzet.</p>
+      </div>
+    </section>
+  </section>
+
+  <div id="message" role="status"></div>
+</main>
+
+<script type="module">
+  import { createClient } from
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+  // GANTI DUA NILAI INI DENGAN DATA PROYEK SUPABASE KAMU
+  const SUPABASE_URL = 'https://cvyaljhylzqxodvhybsr.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_aWMV4-OxZGUqzZEaZytF7Q_Ti9zRo1L';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const $ = id => document.getElementById(id);
+  let transactions = [];
+  let settings = {
+    operational_cost: 65000,
+    capital_pct: 60,
+    store_pct: 20,
+    development_pct: 8,
+    hari_pct: 4,
+    alfan_pct: 4,
+    nadhir_pct: 4
+  };
+  let editingDate = null;
+
+  const rupiah = value =>
+    new Intl.NumberFormat('id-ID', {
+      style: 'currency', currency: 'IDR',
+      maximumFractionDigits: 0
+    }).format(Number(value) || 0);
+
+  const number = value =>
+    new Intl.NumberFormat('id-ID', {
+      maximumFractionDigits: 0
+    }).format(Number(value) || 0);
+
+  function notify(text, error = false) {
+    $('message').textContent = text;
+    $('message').className = error ? 'error' : 'success';
+  }
+
+  function calculate(omzet) {
+    const operational = Number(settings.operational_cost);
+    const remainder = Math.max(0, Number(omzet) - operational);
+    const part = pct => remainder * Number(pct) / 100;
+
+    return {
+      omzet: Number(omzet),
+      operational,
+      capital: part(settings.capital_pct),
+      store: part(settings.store_pct),
+      development: part(settings.development_pct),
+      hari: part(settings.hari_pct),
+      alfan: part(settings.alfan_pct),
+      nadhir: part(settings.nadhir_pct)
+    };
+  }
+
+  async function loadData() {
+    const { data: config, error: configError } = await supabase
+      .from('cash_settings')
+      .select('*')
+      .eq('id', 1)
+      .single();
+
+    if (configError) throw configError;
+    settings = config;
+
+    const { data, error } = await supabase
+      .from('cash_transactions')
+      .select('*')
+      .order('transaction_date', { ascending: false });
+
+    if (error) throw error;
+    transactions = data || [];
+    render();
+  }
+
+  function render() {
+    const rows = transactions.map(t => ({
+      date: t.transaction_date,
+      ...calculate(t.omzet)
+    }));
+
+    const sum = key => rows.reduce((total, row) => total + row[key], 0);
+
+    $('totalOmzet').textContent = rupiah(sum('omzet'));
+    $('totalDevelopment').textContent = rupiah(sum('development'));
+    $('totalShare').textContent = rupiah(sum('hari'));
+
+    $('reportBody').innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.date}</td>
+        <td>${rupiah(r.omzet)}</td>
+        <td>${rupiah(r.operational)}</td>
+        <td>${rupiah(r.capital)}</td>
+        <td>${rupiah(r.store)}</td>
+        <td>${rupiah(r.development)}</td>
+        <td>${rupiah(r.hari)}</td>
+        <td>${rupiah(r.alfan)}</td>
+        <td>${rupiah(r.nadhir)}</td>
+        <td>
+          <div class="actions">
+            <button data-edit="${r.date}" aria-label="Edit ${r.date}">Edit</button>
+            <button class="danger" data-delete="${r.date}" aria-label="Hapus ${r.date}">Hapus</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    $('reportFoot').innerHTML = `
+      <tr>
+        <td>TOTAL</td>
+        <td>${rupiah(sum('omzet'))}</td>
+        <td>${rupiah(sum('operational'))}</td>
+        <td>${rupiah(sum('capital'))}</td>
+        <td>${rupiah(sum('store'))}</td>
+        <td>${rupiah(sum('development'))}</td>
+        <td>${rupiah(sum('hari'))}</td>
+        <td>${rupiah(sum('alfan'))}</td>
+        <td>${rupiah(sum('nadhir'))}</td>
+        <td></td>
+      </tr>`;
+
+    $('emptyReport').classList.toggle('hidden', rows.length > 0);
+  }
+
+  function showPage(page) {
+    const dashboard = page === 'dashboard';
+    $('dashboardPage').classList.toggle('hidden', !dashboard);
+    $('reportPage').classList.toggle('hidden', dashboard);
+    $('dashboardTab').classList.toggle('primary', dashboard);
+    $('reportTab').classList.toggle('primary', !dashboard);
+  }
+
+  async function showApp(user) {
+    $('loginPanel').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    $('userLabel').textContent = 'Login berhasil';
+    try {
+      await loadData();
+      notify('Data berhasil dimuat.');
+    } catch (error) {
+      notify('Gagal memuat data: ' + error.message, true);
+    }
+  }
+
+  async function checkSession() {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) notify(error.message, true);
+    if (data.session) await showApp(data.session.user);
+  }
+
+  $('loginForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    notify('Sedang login...');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: $('email').value.trim(),
+      password: $('password').value
+    });
+    if (error) return notify('Login gagal: ' + error.message, true);
+    await checkSession();
+  });
+
+  $('logoutBtn').addEventListener('click', async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) return notify(error.message, true);
+    $('app').classList.add('hidden');
+    $('loginPanel').classList.remove('hidden');
+    notify('Kamu sudah keluar.');
+  });
+
+  $('dashboardTab').addEventListener('click', () => showPage('dashboard'));
+  $('reportTab').addEventListener('click', () => showPage('report'));
+
+  function resetForm() {
+    editingDate = null;
+    $('transactionForm').reset();
+    $('date').disabled = false;
+    $('formTitle').textContent = 'Input Omzet';
+    $('saveBtn').textContent = 'Simpan Omzet';
+    $('cancelEditBtn').classList.add('hidden');
+  }
+
+  $('cancelEditBtn').addEventListener('click', resetForm);
+
+  $('transactionForm').addEventListener('submit', async event => {
+    event.preventDefault();
+
+    const date = $('date').value;
+    const omzet = Number($('omzet').value);
+
+    if (!date || !Number.isFinite(omzet) || omzet < 0) {
+      return notify('Tanggal atau nominal omzet tidak valid.', true);
+    }
+
+    const existing = transactions.find(t => t.transaction_date === date);
+    if (existing && editingDate !== date) {
+      if (!confirm('Tanggal ini sudah ada. Ganti nominal omzet yang lama?')) return;
+    }
+
+    $('saveBtn').disabled = true;
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const payload = {
+        transaction_date: date,
+        omzet,
+        created_by: userData.user?.id ?? null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('cash_transactions')
+        .upsert(payload, { onConflict: 'transaction_date' });
+
+      if (error) throw error;
+
+      resetForm();
+      await loadData();
+      showPage('dashboard');
+      notify('Omzet berhasil disimpan.');
+    } catch (error) {
+      notify('Gagal menyimpan: ' + error.message, true);
+    } finally {
+      $('saveBtn').disabled = false;
+    }
+  });
+
+  $('reportBody').addEventListener('click', async event => {
+    const editButton = event.target.closest('[data-edit]');
+    const deleteButton = event.target.closest('[data-delete]');
+
+    if (editButton) {
+      const date = editButton.dataset.edit;
+      const row = transactions.find(t => t.transaction_date === date);
+      if (!row) return;
+
+      editingDate = date;
+      $('date').value = row.transaction_date;
+      $('omzet').value = row.omzet;
+      $('date').disabled = true;
+      $('formTitle').textContent = 'Edit Omzet';
+      $('saveBtn').textContent = 'Simpan Perubahan';
+      $('cancelEditBtn').classList.remove('hidden');
+      showPage('dashboard');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    if (deleteButton) {
+      const date = deleteButton.dataset.delete;
+      if (!confirm('Yakin ingin menghapus laporan tanggal ' + date + '? Data yang dihapus tidak bisa dipulihkan.')) return;
+
+      try {
+        const { error } = await supabase
+          .from('cash_transactions')
+          .delete()
+          .eq('transaction_date', date);
+
+        if (error) throw error;
+        await loadData();
+        notify('Laporan berhasil dihapus.');
+      } catch (error) {
+        notify('Gagal menghapus: ' + error.message, true);
+      }
+    }
+  });
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (!session) {
+      $('app').classList.add('hidden');
+      $('loginPanel').classList.remove('hidden');
+    }
+  });
+
+  // Tanggal hari ini sebagai tanggal awal input.
+  $('date').value = new Date().toLocaleDateString('en-CA');
+
+  checkSession();
+</script>
+</body>
+          </html>
+          
