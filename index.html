@@ -5,44 +5,102 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#111827">
+  <link rel="manifest" href="./manifest.json">
   <title>Kas Usaha</title>
 
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background: #f3f4f6;
       color: #1f2937;
     }
+
     header {
       background: #111827;
       color: white;
       padding: 20px 16px;
     }
+
     header h2 { margin: 0 0 6px; }
     header p { margin: 0; color: #cbd5e1; font-size: 13px; }
-    main { max-width: 1050px; margin: auto; padding: 16px; }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 16px;
+    }
+
     .panel, .stat {
       background: white;
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 16px;
       margin-bottom: 14px;
       border: 1px solid #e5e7eb;
     }
+
+    /* Dashboard */
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 5px;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
-    .stat small { color: #6b7280; display: block; }
-    .stat strong {
+
+    .stat-main {
+      grid-column: 1 / -1;
+      padding: 24px 20px;
+      background: #ecfdf5;
+      border-color: #bbf7d0;
+    }
+
+    .stat-main small {
+      color: #166534;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+
+    .stat-main strong {
       display: block;
-      margin-top: 9px;
-      font-size: clamp(26px, 5vw, 36px);
+      margin-top: 10px;
+      font-size: clamp(32px, 7vw, 48px);
+      line-height: 1.2;
+      color: #15803d;
       overflow-wrap: anywhere;
     }
-    nav { display: flex; gap: 8px; margin-bottom: 16px; }
+
+    .stat-secondary {
+      padding: 16px 12px;
+      min-width: 0;
+    }
+
+    .stat-secondary small {
+      display: block;
+      color: #6b7280;
+      font-size: 12px;
+      line-height: 1.4;
+      min-height: 34px;
+    }
+
+    .stat-secondary strong {
+      display: block;
+      margin-top: 8px;
+      font-size: clamp(17px, 4vw, 24px);
+      overflow-wrap: anywhere;
+    }
+
+    #totalDevelopment { color: #2563eb; }
+    #totalShare { color: #7c3aed; }
+
+    /* Navigasi */
+    nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
     button {
       border: 0;
       border-radius: 8px;
@@ -52,9 +110,23 @@
       color: #111827;
       font-weight: 600;
     }
-    button.primary { background: #111827; color: white; }
-    button.danger { background: #fee2e2; color: #991b1b; }
-    button:disabled { opacity: .5; cursor: wait; }
+
+    button.primary {
+      background: #111827;
+      color: white;
+    }
+
+    button.danger {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: wait;
+    }
+
+    /* Form */
     input {
       width: 100%;
       padding: 12px;
@@ -63,44 +135,65 @@
       border-radius: 8px;
       font-size: 16px;
       background: white;
+      color: #111827;
     }
-    label { font-size: 14px; font-weight: 600; }
+
+    label {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
+
+    /* Tabel laporan */
     .scroll { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
     th, td {
       padding: 11px 10px;
       border-bottom: 1px solid #e5e7eb;
       text-align: right;
       white-space: nowrap;
     }
+
     th { background: #f9fafb; }
     th:first-child, td:first-child { text-align: left; }
     tfoot { font-weight: bold; background: #f3f4f6; }
-    .actions { display: flex; gap: 6px; }
+
+    .actions {
+      display: flex;
+      gap: 6px;
+    }
+
     .actions button { padding: 8px; }
+
     .muted { color: #6b7280; font-size: 13px; }
     .hidden { display: none !important; }
     #message { margin: 10px 0; font-size: 14px; }
     .error { color: #b91c1c; }
     .success { color: #047857; }
+
     @media (max-width: 600px) {
-      .stats { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; gap: 0; }
       main { padding: 10px; }
       header { padding: 17px 12px; }
+      .stat-main { padding: 22px 16px; }
+      .stat-secondary { padding: 14px 10px; }
+      .form-grid { grid-template-columns: 1fr; gap: 0; }
       nav button { flex: 1; padding: 11px 7px; }
     }
   </style>
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#111827">
 </head>
-<body>
 
+<body>
 <header>
   <h2>Kas Usaha</h2>
   <p>Dashboard dan laporan keuangan</p>
@@ -109,68 +202,57 @@
 <main>
   <section id="loginPanel" class="panel">
     <h3>Login</h3>
-    <p class="muted">Login Gmail</p>
+    <p class="muted">Masuk dengan akun yang sudah terdaftar</p>
+
     <form id="loginForm">
       <label for="email">Email</label>
       <input id="email" type="email" autocomplete="username" required>
+
       <label for="password">Password</label>
-      <input id="password" type="password" autocomplete="current-password" required>
+      <input id="password" type="password"
+        autocomplete="current-password" required>
+
       <button class="primary" type="submit">Masuk</button>
     </form>
   </section>
 
   <section id="app" class="hidden">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px">
+    <div style="display:flex;justify-content:space-between;
+      align-items:center;margin-bottom:14px;gap:8px">
       <span id="userLabel" class="muted">Terhubung</span>
       <button id="logoutBtn">Keluar</button>
     </div>
 
     <nav>
       <button id="dashboardTab" class="primary">Dashboard</button>
-      <button id="reportTab">Laporan Kas</button>
+      <button id="inputTab">Input Omzet</button>
     </nav>
 
+    <!-- HALAMAN 1: DASHBOARD DAN LAPORAN -->
     <section id="dashboardPage">
       <div class="stats">
-        <div class="stat">
-          <small>Total Omzet</small>
+        <div class="stat stat-main">
+          <small>TOTAL OMZET</small>
           <strong id="totalOmzet">Rp0</strong>
         </div>
-        <div class="stat">
-          <small>Total Dana Pengembangan</small>
+
+        <div class="stat stat-secondary">
+          <small>TOTAL DANA PENGEMBANGAN</small>
           <strong id="totalDevelopment">Rp0</strong>
         </div>
-        <div class="stat">
-          <small>Total Satu Porsi Saham (4%)</small>
+
+        <div class="stat stat-secondary">
+          <small>TOTAL SAHAM (4%)</small>
           <strong id="totalShare">Rp0</strong>
         </div>
       </div>
 
       <div class="panel">
-        <h3 id="formTitle">Input Omzet</h3>
-        <form id="transactionForm">
-          <div class="form-grid">
-            <div>
-              <label for="date">Tanggal</label>
-              <input id="date" type="date" required>
-            </div>
-            <div>
-              <label for="omzet">Nominal Omzet (Rp)</label>
-              <input id="omzet" type="number" min="0" step="1"
-                placeholder="Contoh: 500000" required>
-            </div>
-          </div>
-          <button class="primary" id="saveBtn" type="submit">Simpan Omzet</button>
-          <button id="cancelEditBtn" class="hidden" type="button">Batal Edit</button>
-          <p class="muted">Satu tanggal hanya memiliki satu catatan omzet. Jika tanggal yang sama disimpan lagi, nominal sebelumnya akan diperbarui.</p>
-        </form>
-      </div>
-    </section>
+        <h3 style="margin-top:0">Laporan Kas</h3>
+        <p class="muted">
+          Operasional dipotong dari omzet sebelum pembagian dana.
+        </p>
 
-    <section id="reportPage" class="hidden">
-      <div class="panel">
-        <h3>Laporan Arus Kas</h3>
-        <p class="muted">Operasional langsung dipotong dari omzet</p>
         <div class="scroll">
           <table>
             <thead>
@@ -191,7 +273,40 @@
             <tfoot id="reportFoot"></tfoot>
           </table>
         </div>
-        <p id="emptyReport" class="muted hidden">Belum ada data omzet.</p>
+
+        <p id="emptyReport" class="muted hidden">
+          Belum ada data omzet.
+        </p>
+      </div>
+    </section>
+
+    <!-- HALAMAN 2: INPUT OMZET -->
+    <section id="inputPage" class="hidden">
+      <div class="panel">
+        <h3 id="formTitle" style="margin-top:0">Input Omzet</h3>
+
+        <form id="transactionForm">
+          <label for="date">Tanggal</label>
+          <input id="date" type="date" required>
+
+          <label for="omzet">Nominal Omzet (Rp)</label>
+          <input id="omzet" type="number" min="0" step="1"
+            placeholder="Contoh: 500000" required>
+
+          <button class="primary" id="saveBtn" type="submit">
+            Simpan Omzet
+          </button>
+
+          <button id="cancelEditBtn" class="hidden" type="button">
+            Batal Edit
+          </button>
+
+          <p class="muted">
+            Satu tanggal hanya memiliki satu catatan omzet.
+            Jika tanggal yang sama disimpan lagi, nominal sebelumnya
+            akan diperbarui setelah dikonfirmasi.
+          </p>
+        </form>
       </div>
     </section>
   </section>
@@ -203,13 +318,15 @@
   import { createClient } from
     'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-  // GANTI DUA NILAI INI DENGAN DATA PROYEK SUPABASE KAMU
-  const SUPABASE_URL = 'https://cvyaljhylzqxodvhybsr.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_aWMV4-OxZGUqzZEaZytF7Q_Ti9zRo1L';
+  const SUPABASE_URL =
+    'https://cvyaljhylzqxodvhybsr.supabase.co';
+
+  const SUPABASE_KEY =
+    'sb_publishable_aWMV4-OxZGUqzZEaZytF7Q_Ti9zRo1L';
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const $ = id => document.getElementById(id);
+
   let transactions = [];
   let settings = {
     operational_cost: 65000,
@@ -220,16 +337,13 @@
     alfan_pct: 4,
     nadhir_pct: 4
   };
+
   let editingDate = null;
 
   const rupiah = value =>
     new Intl.NumberFormat('id-ID', {
-      style: 'currency', currency: 'IDR',
-      maximumFractionDigits: 0
-    }).format(Number(value) || 0);
-
-  const number = value =>
-    new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
       maximumFractionDigits: 0
     }).format(Number(value) || 0);
 
@@ -271,6 +385,7 @@
       .order('transaction_date', { ascending: false });
 
     if (error) throw error;
+
     transactions = data || [];
     render();
   }
@@ -281,10 +396,13 @@
       ...calculate(t.omzet)
     }));
 
-    const sum = key => rows.reduce((total, row) => total + row[key], 0);
+    const sum = key =>
+      rows.reduce((total, row) => total + row[key], 0);
 
     $('totalOmzet').textContent = rupiah(sum('omzet'));
     $('totalDevelopment').textContent = rupiah(sum('development'));
+
+    // Satu porsi saham 4%, bukan penjumlahan ketiga pemilik saham.
     $('totalShare').textContent = rupiah(sum('hari'));
 
     $('reportBody').innerHTML = rows.map(r => `
@@ -300,8 +418,8 @@
         <td>${rupiah(r.nadhir)}</td>
         <td>
           <div class="actions">
-            <button data-edit="${r.date}" aria-label="Edit ${r.date}">Edit</button>
-            <button class="danger" data-delete="${r.date}" aria-label="Hapus ${r.date}">Hapus</button>
+            <button data-edit="${r.date}">Edit</button>
+            <button class="danger" data-delete="${r.date}">Hapus</button>
           </div>
         </td>
       </tr>
@@ -326,16 +444,21 @@
 
   function showPage(page) {
     const dashboard = page === 'dashboard';
+
     $('dashboardPage').classList.toggle('hidden', !dashboard);
-    $('reportPage').classList.toggle('hidden', dashboard);
+    $('inputPage').classList.toggle('hidden', dashboard);
+
     $('dashboardTab').classList.toggle('primary', dashboard);
-    $('reportTab').classList.toggle('primary', !dashboard);
+    $('inputTab').classList.toggle('primary', !dashboard);
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function showApp(user) {
     $('loginPanel').classList.add('hidden');
     $('app').classList.remove('hidden');
     $('userLabel').textContent = 'Login berhasil';
+
     try {
       await loadData();
       notify('Data berhasil dimuat.');
@@ -346,6 +469,7 @@
 
   async function checkSession() {
     const { data, error } = await supabase.auth.getSession();
+
     if (error) notify(error.message, true);
     if (data.session) await showApp(data.session.user);
   }
@@ -353,24 +477,34 @@
   $('loginForm').addEventListener('submit', async event => {
     event.preventDefault();
     notify('Sedang login...');
+
     const { error } = await supabase.auth.signInWithPassword({
       email: $('email').value.trim(),
       password: $('password').value
     });
+
     if (error) return notify('Login gagal: ' + error.message, true);
     await checkSession();
   });
 
   $('logoutBtn').addEventListener('click', async () => {
     const { error } = await supabase.auth.signOut();
+
     if (error) return notify(error.message, true);
+
     $('app').classList.add('hidden');
     $('loginPanel').classList.remove('hidden');
     notify('Kamu sudah keluar.');
   });
 
-  $('dashboardTab').addEventListener('click', () => showPage('dashboard'));
-  $('reportTab').addEventListener('click', () => showPage('report'));
+  $('dashboardTab').addEventListener('click', () => {
+    showPage('dashboard');
+  });
+
+  $('inputTab').addEventListener('click', () => {
+    if (!editingDate) resetForm();
+    showPage('input');
+  });
 
   function resetForm() {
     editingDate = null;
@@ -379,9 +513,13 @@
     $('formTitle').textContent = 'Input Omzet';
     $('saveBtn').textContent = 'Simpan Omzet';
     $('cancelEditBtn').classList.add('hidden');
+    $('date').value = new Date().toLocaleDateString('en-CA');
   }
 
-  $('cancelEditBtn').addEventListener('click', resetForm);
+  $('cancelEditBtn').addEventListener('click', () => {
+    resetForm();
+    showPage('dashboard');
+  });
 
   $('transactionForm').addEventListener('submit', async event => {
     event.preventDefault();
@@ -393,18 +531,28 @@
       return notify('Tanggal atau nominal omzet tidak valid.', true);
     }
 
-    const existing = transactions.find(t => t.transaction_date === date);
+    const existing = transactions.find(
+      t => t.transaction_date === date
+    );
+
     if (existing && editingDate !== date) {
-      if (!confirm('Tanggal ini sudah ada. Ganti nominal omzet yang lama?')) return;
+      if (!confirm(
+        'Tanggal ini sudah ada. Ganti nominal omzet yang lama?'
+      )) return;
     }
 
     $('saveBtn').disabled = true;
+
     try {
-      const { data: userData } = await supabase.auth.getUser();
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
+
+      if (userError) throw userError;
+
       const payload = {
         transaction_date: date,
         omzet,
-        created_by: userData.user?.id ?? null,
+        created_by: userData.user.id,
         updated_at: new Date().toISOString()
       };
 
@@ -431,7 +579,10 @@
 
     if (editButton) {
       const date = editButton.dataset.edit;
-      const row = transactions.find(t => t.transaction_date === date);
+      const row = transactions.find(
+        t => t.transaction_date === date
+      );
+
       if (!row) return;
 
       editingDate = date;
@@ -441,13 +592,17 @@
       $('formTitle').textContent = 'Edit Omzet';
       $('saveBtn').textContent = 'Simpan Perubahan';
       $('cancelEditBtn').classList.remove('hidden');
-      showPage('dashboard');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      showPage('input');
     }
 
     if (deleteButton) {
       const date = deleteButton.dataset.delete;
-      if (!confirm('Yakin ingin menghapus laporan tanggal ' + date + '? Data yang dihapus tidak bisa dipulihkan.')) return;
+
+      if (!confirm(
+        'Yakin ingin menghapus laporan tanggal ' + date +
+        '? Data yang dihapus tidak bisa dipulihkan.'
+      )) return;
 
       try {
         const { error } = await supabase
@@ -456,6 +611,7 @@
           .eq('transaction_date', date);
 
         if (error) throw error;
+
         await loadData();
         notify('Laporan berhasil dihapus.');
       } catch (error) {
@@ -471,19 +627,17 @@
     }
   });
 
-  // Tanggal hari ini sebagai tanggal awal input.
   $('date').value = new Date().toLocaleDateString('en-CA');
-
   checkSession();
 </script>
+
 <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js")
-        .catch(error => console.error("Service Worker:", error));
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .catch(error => console.error('Service Worker:', error));
     });
   }
 </script>
 </body>
-          </html>
-          
+</html>
