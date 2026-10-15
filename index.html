@@ -278,6 +278,34 @@
           Belum ada data omzet.
         </p>
       </div>
+      <!-- LAPORAN DANA PENGEMBANGAN -->
+      <div class="panel">
+        <h3 style="margin-top:0">Laporan Dana Pengembangan</h3>
+        <p class="muted">
+          Dana masuk dihitung otomatis dari alokasi pengembangan
+          8% pada seluruh riwayat omzet.
+        </p>
+
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Masuk</th>
+                <th>Keluar</th>
+                <th>Saldo</th>
+                <th>Aksi Pengeluaran</th>
+              </tr>
+            </thead>
+            <tbody id="developmentReportBody"></tbody>
+            <tfoot id="developmentReportFoot"></tfoot>
+          </table>
+        </div>
+
+        <p id="emptyDevelopmentReport" class="muted hidden">
+          Belum ada data dana pengembangan.
+        </p>
+      </div>
     </section>
 
     <!-- HALAMAN 2: INPUT OMZET -->
@@ -309,6 +337,29 @@
         </form>
       </div>
     </section>
+    <!-- FORM PENGELUARAN DANA PENGEMBANGAN -->
+      <div class="panel">
+        <h3 id="expenseFormTitle" style="margin-top:0">
+          Input Pengeluaran Pengembangan
+        </h3>
+
+        <form id="expenseForm">
+          <label for="expenseDate">Tanggal Pengeluaran</label>
+          <input id="expenseDate" type="date" required>
+
+          <label for="expenseAmount">Nominal Pengeluaran (Rp)</label>
+          <input id="expenseAmount" type="number"
+            min="1" step="1" placeholder="Contoh: 20000" required>
+
+          <button class="primary" id="saveExpenseBtn" type="submit">
+            Simpan Pengeluaran
+          </button>
+
+          <button id="cancelExpenseBtn" type="button" class="hidden">
+            Batal Edit
+          </button>
+        </form>
+      </div>
   </section>
 
   <div id="message" role="status"></div>
@@ -327,6 +378,8 @@
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const $ = id => document.getElementById(id);
 
+  let expenses = [];
+  let editingExpenseId = null;
   let transactions = [];
   let settings = {
     operational_cost: 65000,
@@ -387,7 +440,18 @@
     if (error) throw error;
 
     transactions = data || [];
+
+    const { data: expenseData, error: expenseError } = await supabase
+      .from('development_expenses')
+      .select('*')
+      .order('expense_date', { ascending: true });
+
+    if (expenseError) throw expenseError;
+
+    expenses = expenseData || [];
+
     render();
+    renderDevelopmentReport();
   }
 
   function render() {
@@ -442,6 +506,140 @@
     $('emptyReport').classList.toggle('hidden', rows.length > 0);
   }
 
+  function renderDevelopmentReport() {
+    const daily = {};
+
+    // Dana masuk dihitung dari seluruh riwayat omzet.
+    transactions.forEach(t => {
+      const date = t.transaction_date;
+      if (!daily[date]) {
+        daily[date] = { date, masuk: 0, keluar: 0, expenses: [] };
+      }
+      daily[date].masuk += calculate(t.omzet).development;
+    });
+
+    // Pengeluaran dikelompokkan berdasarkan tanggal.
+    expenses.forEach(e => {
+      const date = e.expense_date;
+      if (!daily[date]) {
+        daily[date] = { date, masuk: 0, keluar: 0, expenses: [] };
+      }
+      daily[date].keluar += Number(e.amount);
+      daily[date].expenses.push(e);
+    });
+
+    const rows = Object.values(daily)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    let saldo = 0;
+
+    rows.forEach(r => {
+      saldo += r.masuk - r.keluar;
+      r.saldo = saldo;
+    });
+
+    $('developmentReportBody').innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.date}</td>
+        <td>${rupiah(r.masuk)}</td>
+        <td>${rupiah(r.keluar)}</td>
+        <td>${rupiah(r.saldo)}</td>
+        <td>
+          ${r.expenses.map(e => `
+            <div class="actions" style="margin-bottom:6px">
+              <button data-expense-edit="${e.id}">Edit</button>
+              <button class="danger"
+                data-expense-delete="${e.id}">Hapus</button>
+            </div>
+          `).join('') || '-'}
+        </td>
+      </tr>
+    `).join('');
+
+    const totalMasuk = rows.reduce((s, r) => s + r.masuk, 0);
+    const totalKeluar = rows.reduce((s, r) => s + r.keluar, 0);
+    const saldoAkhir = totalMasuk - totalKeluar;
+
+    $('developmentReportFoot').innerHTML = `
+      <tr>
+        <td>TOTAL</td>
+        <td>${rupiah(totalMasuk)}</td>
+        <td>${rupiah(totalKeluar)}</td>
+        <td>${rupiah(saldoAkhir)}</td>
+        <td></td>
+      </tr>`;
+
+    $('emptyDevelopmentReport').classList.toggle(
+      'hidden', rows.length > 0
+    );
+  }
+  function renderDevelopmentReport() {
+    const daily = {};
+
+    // Dana masuk dihitung dari seluruh riwayat omzet.
+    transactions.forEach(t => {
+      const date = t.transaction_date;
+      if (!daily[date]) {
+        daily[date] = { date, masuk: 0, keluar: 0, expenses: [] };
+      }
+      daily[date].masuk += calculate(t.omzet).development;
+    });
+
+    // Pengeluaran dikelompokkan berdasarkan tanggal.
+    expenses.forEach(e => {
+      const date = e.expense_date;
+      if (!daily[date]) {
+        daily[date] = { date, masuk: 0, keluar: 0, expenses: [] };
+      }
+      daily[date].keluar += Number(e.amount);
+      daily[date].expenses.push(e);
+    });
+
+    const rows = Object.values(daily)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    let saldo = 0;
+
+    rows.forEach(r => {
+      saldo += r.masuk - r.keluar;
+      r.saldo = saldo;
+    });
+
+    $('developmentReportBody').innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.date}</td>
+        <td>${rupiah(r.masuk)}</td>
+        <td>${rupiah(r.keluar)}</td>
+        <td>${rupiah(r.saldo)}</td>
+        <td>
+          ${r.expenses.map(e => `
+            <div class="actions" style="margin-bottom:6px">
+              <button data-expense-edit="${e.id}">Edit</button>
+              <button class="danger"
+                data-expense-delete="${e.id}">Hapus</button>
+            </div>
+          `).join('') || '-'}
+        </td>
+      </tr>
+    `).join('');
+
+    const totalMasuk = rows.reduce((s, r) => s + r.masuk, 0);
+    const totalKeluar = rows.reduce((s, r) => s + r.keluar, 0);
+    const saldoAkhir = totalMasuk - totalKeluar;
+
+    $('developmentReportFoot').innerHTML = `
+      <tr>
+        <td>TOTAL</td>
+        <td>${rupiah(totalMasuk)}</td>
+        <td>${rupiah(totalKeluar)}</td>
+        <td>${rupiah(saldoAkhir)}</td>
+        <td></td>
+      </tr>`;
+
+    $('emptyDevelopmentReport').classList.toggle(
+      'hidden', rows.length > 0
+    );
+  }
   function showPage(page) {
     const dashboard = page === 'dashboard';
 
