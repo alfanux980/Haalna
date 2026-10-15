@@ -41,7 +41,6 @@
       border: 1px solid #e5e7eb;
     }
 
-    /* Dashboard */
     .stats {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -94,7 +93,6 @@
     #totalDevelopment { color: #2563eb; }
     #totalShare { color: #7c3aed; }
 
-    /* Navigasi */
     nav {
       display: flex;
       gap: 8px;
@@ -126,7 +124,6 @@
       cursor: wait;
     }
 
-    /* Form */
     input {
       width: 100%;
       padding: 12px;
@@ -143,13 +140,6 @@
       font-weight: 600;
     }
 
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    /* Tabel laporan */
     .scroll { overflow-x: auto; }
 
     table {
@@ -178,7 +168,7 @@
 
     .muted { color: #6b7280; font-size: 13px; }
     .hidden { display: none !important; }
-    #message { margin: 10px 0; font-size: 14px; }
+    #message { margin: 10px 0; font-size: 14px; overflow-wrap: anywhere; }
     .error { color: #b91c1c; }
     .success { color: #047857; }
 
@@ -187,7 +177,6 @@
       header { padding: 17px 12px; }
       .stat-main { padding: 22px 16px; }
       .stat-secondary { padding: 14px 10px; }
-      .form-grid { grid-template-columns: 1fr; gap: 0; }
       nav button { flex: 1; padding: 11px 7px; }
     }
   </style>
@@ -228,7 +217,7 @@
       <button id="inputTab">Input Omzet</button>
     </nav>
 
-    <!-- HALAMAN 1: DASHBOARD DAN LAPORAN -->
+    <!-- DASHBOARD -->
     <section id="dashboardPage">
       <div class="stats">
         <div class="stat stat-main">
@@ -237,16 +226,17 @@
         </div>
 
         <div class="stat stat-secondary">
-          <small>PENGEMBANGAN</small>
+          <small>TOTAL DANA PENGEMBANGAN</small>
           <strong id="totalDevelopment">Rp0</strong>
         </div>
 
         <div class="stat stat-secondary">
-          <small>SAHAM (4%)</small>
+          <small>TOTAL SAHAM (4%)</small>
           <strong id="totalShare">Rp0</strong>
         </div>
       </div>
 
+      <!-- LAPORAN KAS -->
       <div class="panel">
         <h3 style="margin-top:0">Laporan Kas</h3>
         <p class="muted">
@@ -261,7 +251,7 @@
                 <th>Omzet</th>
                 <th>Operasional</th>
                 <th>Modal 60%</th>
-                <th>Manager Toko 20%</th>
+                <th>Handle Toko 20%</th>
                 <th>Pengembangan 8%</th>
                 <th>Saham Hari 4%</th>
                 <th>Saham Alfan 4%</th>
@@ -278,9 +268,38 @@
           Belum ada data omzet.
         </p>
       </div>
+
+      <!-- LAPORAN DANA PENGEMBANGAN -->
+      <div class="panel">
+        <h3 style="margin-top:0">Laporan Dana Pengembangan</h3>
+        <p class="muted">
+          Dana masuk dihitung dari seluruh riwayat omzet.
+          Saldo merupakan akumulasi dana masuk dikurangi pengeluaran.
+        </p>
+
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>Masuk</th>
+                <th>Keluar</th>
+                <th>Saldo Berjalan</th>
+                <th>Aksi Pengeluaran</th>
+              </tr>
+            </thead>
+            <tbody id="developmentReportBody"></tbody>
+            <tfoot id="developmentReportFoot"></tfoot>
+          </table>
+        </div>
+
+        <p id="emptyDevelopmentReport" class="muted hidden">
+          Belum ada data dana pengembangan.
+        </p>
+      </div>
     </section>
 
-    <!-- HALAMAN 2: INPUT OMZET -->
+    <!-- INPUT OMZET DAN PENGELUARAN -->
     <section id="inputPage" class="hidden">
       <div class="panel">
         <h3 id="formTitle" style="margin-top:0">Input Omzet</h3>
@@ -302,8 +321,34 @@
           </button>
 
           <p class="muted">
-            Input sehari hanya sekali.
+            Satu tanggal hanya memiliki satu catatan omzet.
+            Jika tanggal yang sama disimpan lagi, nominal sebelumnya
+            akan diperbarui setelah dikonfirmasi.
           </p>
+        </form>
+      </div>
+
+      <!-- FORM PENGELUARAN PENGEMBANGAN -->
+      <div class="panel">
+        <h3 id="expenseFormTitle" style="margin-top:0">
+          Input Pengeluaran Pengembangan
+        </h3>
+
+        <form id="expenseForm">
+          <label for="expenseDate">Tanggal Pengeluaran</label>
+          <input id="expenseDate" type="date" required>
+
+          <label for="expenseAmount">Nominal Pengeluaran (Rp)</label>
+          <input id="expenseAmount" type="number" min="1" step="1"
+            placeholder="Contoh: 20000" required>
+
+          <button class="primary" id="saveExpenseBtn" type="submit">
+            Simpan Pengeluaran
+          </button>
+
+          <button id="cancelExpenseBtn" class="hidden" type="button">
+            Batal Edit Pengeluaran
+          </button>
         </form>
       </div>
     </section>
@@ -326,6 +371,10 @@
   const $ = id => document.getElementById(id);
 
   let transactions = [];
+  let expenses = [];
+  let editingDate = null;
+  let editingExpenseId = null;
+
   let settings = {
     operational_cost: 65000,
     capital_pct: 60,
@@ -336,14 +385,19 @@
     nadhir_pct: 4
   };
 
-  let editingDate = null;
-
   const rupiah = value =>
     new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       maximumFractionDigits: 0
     }).format(Number(value) || 0);
+
+  function todayLocal() {
+    const now = new Date();
+    const offset = now.getTimezoneOffset();
+    return new Date(now.getTime() - offset * 60000)
+      .toISOString().slice(0, 10);
+  }
 
   function notify(text, error = false) {
     $('message').textContent = text;
@@ -383,9 +437,18 @@
       .order('transaction_date', { ascending: false });
 
     if (error) throw error;
-
     transactions = data || [];
+
+    const { data: expenseData, error: expenseError } = await supabase
+      .from('development_expenses')
+      .select('*')
+      .order('expense_date', { ascending: true });
+
+    if (expenseError) throw expenseError;
+    expenses = expenseData || [];
+
     render();
+    renderDevelopmentReport();
   }
 
   function render() {
@@ -400,7 +463,7 @@
     $('totalOmzet').textContent = rupiah(sum('omzet'));
     $('totalDevelopment').textContent = rupiah(sum('development'));
 
-    // Satu porsi saham 4%, bukan penjumlahan ketiga pemilik saham.
+    // Satu porsi saham 4%, bukan gabungan tiga pemilik.
     $('totalShare').textContent = rupiah(sum('hari'));
 
     $('reportBody').innerHTML = rows.map(r => `
@@ -440,6 +503,89 @@
     $('emptyReport').classList.toggle('hidden', rows.length > 0);
   }
 
+  function renderDevelopmentReport() {
+    const daily = {};
+
+    // Masuk: alokasi 8% dari semua transaksi omzet.
+    transactions.forEach(t => {
+      const date = t.transaction_date;
+
+      if (!daily[date]) {
+        daily[date] = {
+          date,
+          masuk: 0,
+          keluar: 0,
+          expenses: []
+        };
+      }
+
+      daily[date].masuk += calculate(t.omzet).development;
+    });
+
+    // Keluar: total pengeluaran berdasarkan tanggal.
+    expenses.forEach(e => {
+      const date = e.expense_date;
+
+      if (!daily[date]) {
+        daily[date] = {
+          date,
+          masuk: 0,
+          keluar: 0,
+          expenses: []
+        };
+      }
+
+      daily[date].keluar += Number(e.amount);
+      daily[date].expenses.push(e);
+    });
+
+    // Saldo berjalan dari tanggal paling awal ke paling akhir.
+    const rows = Object.values(daily)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    let saldo = 0;
+
+    rows.forEach(r => {
+      saldo += r.masuk - r.keluar;
+      r.saldo = saldo;
+    });
+
+    $('developmentReportBody').innerHTML = rows.map(r => `
+      <tr>
+        <td>${r.date}</td>
+        <td>${rupiah(r.masuk)}</td>
+        <td>${rupiah(r.keluar)}</td>
+        <td>${rupiah(r.saldo)}</td>
+        <td>
+          ${r.expenses.map(e => `
+            <div class="actions" style="margin-bottom:6px">
+              <button data-expense-edit="${e.id}">Edit</button>
+              <button class="danger"
+                data-expense-delete="${e.id}">Hapus</button>
+            </div>
+          `).join('') || '-'}
+        </td>
+      </tr>
+    `).join('');
+
+    const totalMasuk = rows.reduce((s, r) => s + r.masuk, 0);
+    const totalKeluar = rows.reduce((s, r) => s + r.keluar, 0);
+    const saldoAkhir = totalMasuk - totalKeluar;
+
+    $('developmentReportFoot').innerHTML = `
+      <tr>
+        <td>TOTAL</td>
+        <td>${rupiah(totalMasuk)}</td>
+        <td>${rupiah(totalKeluar)}</td>
+        <td>${rupiah(saldoAkhir)}</td>
+        <td></td>
+      </tr>`;
+
+    $('emptyDevelopmentReport').classList.toggle(
+      'hidden', rows.length > 0
+    );
+  }
+
   function showPage(page) {
     const dashboard = page === 'dashboard';
 
@@ -452,7 +598,7 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  async function showApp(user) {
+  async function showApp() {
     $('loginPanel').classList.add('hidden');
     $('app').classList.remove('hidden');
     $('userLabel').textContent = 'Login berhasil';
@@ -469,7 +615,10 @@
     const { data, error } = await supabase.auth.getSession();
 
     if (error) notify(error.message, true);
-    if (data.session) await showApp(data.session.user);
+
+    if (data.session) {
+      await showApp();
+    }
   }
 
   $('loginForm').addEventListener('submit', async event => {
@@ -481,7 +630,10 @@
       password: $('password').value
     });
 
-    if (error) return notify('Login gagal: ' + error.message, true);
+    if (error) {
+      return notify('Login gagal: ' + error.message, true);
+    }
+
     await checkSession();
   });
 
@@ -511,7 +663,17 @@
     $('formTitle').textContent = 'Input Omzet';
     $('saveBtn').textContent = 'Simpan Omzet';
     $('cancelEditBtn').classList.add('hidden');
-    $('date').value = new Date().toLocaleDateString('en-CA');
+    $('date').value = todayLocal();
+  }
+
+  function resetExpenseForm() {
+    editingExpenseId = null;
+    $('expenseForm').reset();
+    $('expenseDate').value = todayLocal();
+    $('expenseFormTitle').textContent =
+      'Input Pengeluaran Pengembangan';
+    $('saveExpenseBtn').textContent = 'Simpan Pengeluaran';
+    $('cancelExpenseBtn').classList.add('hidden');
   }
 
   $('cancelEditBtn').addEventListener('click', () => {
@@ -546,6 +708,7 @@
         await supabase.auth.getUser();
 
       if (userError) throw userError;
+      if (!userData.user) throw new Error('Silakan login kembali.');
 
       const payload = {
         transaction_date: date,
@@ -565,7 +728,7 @@
       showPage('dashboard');
       notify('Omzet berhasil disimpan.');
     } catch (error) {
-      notify('Gagal menyimpan: ' + error.message, true);
+      notify('Gagal menyimpan omzet: ' + error.message, true);
     } finally {
       $('saveBtn').disabled = false;
     }
@@ -611,31 +774,4 @@
         if (error) throw error;
 
         await loadData();
-        notify('Laporan berhasil dihapus.');
-      } catch (error) {
-        notify('Gagal menghapus: ' + error.message, true);
-      }
-    }
-  });
-
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (!session) {
-      $('app').classList.add('hidden');
-      $('loginPanel').classList.remove('hidden');
-    }
-  });
-
-  $('date').value = new Date().toLocaleDateString('en-CA');
-  checkSession();
-</script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .catch(error => console.error('Service Worker:', error));
-    });
-  }
-</script>
-</body>
-</html>
+        notify
