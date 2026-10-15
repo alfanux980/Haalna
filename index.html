@@ -507,150 +507,106 @@
   }
 
   function renderDevelopmentReport() {
-    const daily = {};
+  const daily = {};
 
-    // Dana masuk dihitung dari seluruh riwayat omzet.
-    transactions.forEach(t => {
-      const date = t.transaction_date;
-      if (!daily[date]) {
-        daily[date] = { date, masuk: 0, keluar: 0, expenses: [] };
-      }
-      daily[date].masuk += calculate(t.omzet).development;
-    });
+  // Hitung dana masuk berdasarkan riwayat omzet.
+  transactions.forEach(t => {
+    const date = t.transaction_date;
 
-    // Pengeluaran dikelompokkan berdasarkan tanggal.
-    expenses.forEach(e => {
-      const date = e.expense_date;
-      if (!daily[date]) {
-        daily[date] = { date, masuk: 0, keluar: 0, expenses: [] };
-      }
-      daily[date].keluar += Number(e.amount);
-      daily[date].expenses.push(e);
-    });
+    if (!daily[date]) {
+      daily[date] = {
+        date,
+        masuk: 0,
+        keluar: 0,
+        expenses: []
+      };
+    }
 
-    const rows = Object.values(daily)
-      .sort((a, b) => a.date.localeCompare(b.date));
+    daily[date].masuk +=
+      Number(calculate(t.omzet).development) || 0;
+  });
 
-    let saldo = 0;
+  // Kelompokkan pengeluaran berdasarkan tanggal.
+  expenses.forEach(e => {
+    const date = e.expense_date;
 
-    rows.forEach(r => {
-      saldo += r.masuk - r.keluar;
-      r.saldo = saldo;
-    });
+    if (!daily[date]) {
+      daily[date] = {
+        date,
+        masuk: 0,
+        keluar: 0,
+        expenses: []
+      };
+    }
 
-    $('developmentReportBody').innerHTML = rows.map(r => `
-      <tr>
-        <td>${r.date}</td>
-        <td>${rupiah(r.masuk)}</td>
-        <td>${rupiah(r.keluar)}</td>
-        <td>${rupiah(r.saldo)}</td>
-        <td>
-          ${r.expenses.map(e => `
-            <div class="actions" style="margin-bottom:6px">
-              <button data-expense-edit="${e.id}">Edit</button>
-              <button class="danger"
-                data-expense-delete="${e.id}">Hapus</button>
-            </div>
-          `).join('') || '-'}
-        </td>
-      </tr>
-    `).join('');
+    daily[date].keluar += Number(e.amount) || 0;
+    daily[date].expenses.push(e);
+  });
 
-    const totalMasuk = rows.reduce((s, r) => s + r.masuk, 0);
-    const totalKeluar = rows.reduce((s, r) => s + r.keluar, 0);
-    const saldoAkhir = totalMasuk - totalKeluar;
+  // Urutkan tanggal secara kronologis.
+  const rows = Object.values(daily).sort(
+    (a, b) => a.date.localeCompare(b.date)
+  );
 
-    $('developmentReportFoot').innerHTML = `
-      <tr>
-        <td>TOTAL</td>
-        <td>${rupiah(totalMasuk)}</td>
-        <td>${rupiah(totalKeluar)}</td>
-        <td>${rupiah(saldoAkhir)}</td>
-        <td></td>
-      </tr>`;
+  // Hitung saldo berjalan.
+  let saldo = 0;
 
-    $('emptyDevelopmentReport').classList.toggle(
-      'hidden', rows.length > 0
-    );
-  }
-  function renderDevelopmentReport() {
-    const daily = {};
+  rows.forEach(row => {
+    saldo += row.masuk - row.keluar;
+    row.saldo = saldo;
+  });
 
-    // Dana masuk dihitung dari seluruh riwayat omzet.
-    transactions.forEach(t => {
-      const date = t.transaction_date;
-      if (!daily[date]) {
-        daily[date] = { date, masuk: 0, keluar: 0, expenses: [] };
-      }
-      daily[date].masuk += calculate(t.omzet).development;
-    });
+  // Tampilkan laporan dana pengembangan.
+  $('developmentReportBody').innerHTML = rows.map(row => `
+    <tr>
+      <td>${row.date}</td>
+      <td>${rupiah(row.masuk)}</td>
+      <td>${rupiah(row.keluar)}</td>
+      <td>${rupiah(row.saldo)}</td>
+      <td>
+        ${row.expenses.map(e => `
+          <div class="actions" style="margin-bottom:6px">
+            <button type="button" data-expense-edit="${e.id}">
+              Edit
+            </button>
+            <button
+              type="button"
+              class="danger"
+              data-expense-delete="${e.id}">
+              Hapus
+            </button>
+          </div>
+        `).join('') || '-'}
+      </td>
+    </tr>
+  `).join('');
 
-    // Pengeluaran dikelompokkan berdasarkan tanggal.
-    expenses.forEach(e => {
-      const date = e.expense_date;
-      if (!daily[date]) {
-        daily[date] = { date, masuk: 0, keluar: 0, expenses: [] };
-      }
-      daily[date].keluar += Number(e.amount);
-      daily[date].expenses.push(e);
-    });
+  // Hitung total dana masuk dan keluar.
+  const totalMasuk = rows.reduce(
+    (sum, row) => sum + row.masuk, 0
+  );
 
-    const rows = Object.values(daily)
-      .sort((a, b) => a.date.localeCompare(b.date));
+  const totalKeluar = rows.reduce(
+    (sum, row) => sum + row.keluar, 0
+  );
 
-    let saldo = 0;
+  const saldoAkhir = totalMasuk - totalKeluar;
 
-    rows.forEach(r => {
-      saldo += r.masuk - r.keluar;
-      r.saldo = saldo;
-    });
+  $('developmentReportFoot').innerHTML = `
+    <tr>
+      <td>TOTAL</td>
+      <td>${rupiah(totalMasuk)}</td>
+      <td>${rupiah(totalKeluar)}</td>
+      <td>${rupiah(saldoAkhir)}</td>
+      <td></td>
+    </tr>
+  `;
 
-    $('developmentReportBody').innerHTML = rows.map(r => `
-      <tr>
-        <td>${r.date}</td>
-        <td>${rupiah(r.masuk)}</td>
-        <td>${rupiah(r.keluar)}</td>
-        <td>${rupiah(r.saldo)}</td>
-        <td>
-          ${r.expenses.map(e => `
-            <div class="actions" style="margin-bottom:6px">
-              <button data-expense-edit="${e.id}">Edit</button>
-              <button class="danger"
-                data-expense-delete="${e.id}">Hapus</button>
-            </div>
-          `).join('') || '-'}
-        </td>
-      </tr>
-    `).join('');
-
-    const totalMasuk = rows.reduce((s, r) => s + r.masuk, 0);
-    const totalKeluar = rows.reduce((s, r) => s + r.keluar, 0);
-    const saldoAkhir = totalMasuk - totalKeluar;
-
-    $('developmentReportFoot').innerHTML = `
-      <tr>
-        <td>TOTAL</td>
-        <td>${rupiah(totalMasuk)}</td>
-        <td>${rupiah(totalKeluar)}</td>
-        <td>${rupiah(saldoAkhir)}</td>
-        <td></td>
-      </tr>`;
-
-    $('emptyDevelopmentReport').classList.toggle(
-      'hidden', rows.length > 0
-    );
-  }
-  function showPage(page) {
-    const dashboard = page === 'dashboard';
-
-    $('dashboardPage').classList.toggle('hidden', !dashboard);
-    $('inputPage').classList.toggle('hidden', dashboard);
-
-    $('dashboardTab').classList.toggle('primary', dashboard);
-    $('inputTab').classList.toggle('primary', !dashboard);
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  $('emptyDevelopmentReport').classList.toggle(
+    'hidden',
+    rows.length > 0
+  );
+}
 
   async function showApp(user) {
     $('loginPanel').classList.add('hidden');
