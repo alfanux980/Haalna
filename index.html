@@ -278,34 +278,6 @@
           Belum ada data omzet.
         </p>
       </div>
-      <!-- LAPORAN DANA PENGEMBANGAN -->
-      <div class="panel">
-        <h3 style="margin-top:0">Laporan Dana Pengembangan</h3>
-        <p class="muted">
-          Dana masuk dihitung otomatis dari alokasi pengembangan
-          8% pada seluruh riwayat omzet.
-        </p>
-
-        <div class="scroll">
-          <table>
-            <thead>
-              <tr>
-                <th>Tanggal</th>
-                <th>Masuk</th>
-                <th>Keluar</th>
-                <th>Saldo</th>
-                <th>Aksi Pengeluaran</th>
-              </tr>
-            </thead>
-            <tbody id="developmentReportBody"></tbody>
-            <tfoot id="developmentReportFoot"></tfoot>
-          </table>
-        </div>
-
-        <p id="emptyDevelopmentReport" class="muted hidden">
-          Belum ada data dana pengembangan.
-        </p>
-      </div>
     </section>
 
     <!-- HALAMAN 2: INPUT OMZET -->
@@ -337,29 +309,6 @@
         </form>
       </div>
     </section>
-    <!-- FORM PENGELUARAN DANA PENGEMBANGAN -->
-      <div class="panel">
-        <h3 id="expenseFormTitle" style="margin-top:0">
-          Input Pengeluaran Pengembangan
-        </h3>
-
-        <form id="expenseForm">
-          <label for="expenseDate">Tanggal Pengeluaran</label>
-          <input id="expenseDate" type="date" required>
-
-          <label for="expenseAmount">Nominal Pengeluaran (Rp)</label>
-          <input id="expenseAmount" type="number"
-            min="1" step="1" placeholder="Contoh: 20000" required>
-
-          <button class="primary" id="saveExpenseBtn" type="submit">
-            Simpan Pengeluaran
-          </button>
-
-          <button id="cancelExpenseBtn" type="button" class="hidden">
-            Batal Edit
-          </button>
-        </form>
-      </div>
   </section>
 
   <div id="message" role="status"></div>
@@ -378,8 +327,6 @@
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   const $ = id => document.getElementById(id);
 
-  let expenses = [];
-  let editingExpenseId = null;
   let transactions = [];
   let settings = {
     operational_cost: 65000,
@@ -440,18 +387,7 @@
     if (error) throw error;
 
     transactions = data || [];
-
-    const { data: expenseData, error: expenseError } = await supabase
-      .from('development_expenses')
-      .select('*')
-      .order('expense_date', { ascending: true });
-
-    if (expenseError) throw expenseError;
-
-    expenses = expenseData || [];
-
     render();
-    renderDevelopmentReport();
   }
 
   function render() {
@@ -506,107 +442,17 @@
     $('emptyReport').classList.toggle('hidden', rows.length > 0);
   }
 
-  function renderDevelopmentReport() {
-  const daily = {};
+  function showPage(page) {
+    const dashboard = page === 'dashboard';
 
-  // Hitung dana masuk berdasarkan riwayat omzet.
-  transactions.forEach(t => {
-    const date = t.transaction_date;
+    $('dashboardPage').classList.toggle('hidden', !dashboard);
+    $('inputPage').classList.toggle('hidden', dashboard);
 
-    if (!daily[date]) {
-      daily[date] = {
-        date,
-        masuk: 0,
-        keluar: 0,
-        expenses: []
-      };
-    }
+    $('dashboardTab').classList.toggle('primary', dashboard);
+    $('inputTab').classList.toggle('primary', !dashboard);
 
-    daily[date].masuk +=
-      Number(calculate(t.omzet).development) || 0;
-  });
-
-  // Kelompokkan pengeluaran berdasarkan tanggal.
-  expenses.forEach(e => {
-    const date = e.expense_date;
-
-    if (!daily[date]) {
-      daily[date] = {
-        date,
-        masuk: 0,
-        keluar: 0,
-        expenses: []
-      };
-    }
-
-    daily[date].keluar += Number(e.amount) || 0;
-    daily[date].expenses.push(e);
-  });
-
-  // Urutkan tanggal secara kronologis.
-  const rows = Object.values(daily).sort(
-    (a, b) => a.date.localeCompare(b.date)
-  );
-
-  // Hitung saldo berjalan.
-  let saldo = 0;
-
-  rows.forEach(row => {
-    saldo += row.masuk - row.keluar;
-    row.saldo = saldo;
-  });
-
-  // Tampilkan laporan dana pengembangan.
-  $('developmentReportBody').innerHTML = rows.map(row => `
-    <tr>
-      <td>${row.date}</td>
-      <td>${rupiah(row.masuk)}</td>
-      <td>${rupiah(row.keluar)}</td>
-      <td>${rupiah(row.saldo)}</td>
-      <td>
-        ${row.expenses.map(e => `
-          <div class="actions" style="margin-bottom:6px">
-            <button type="button" data-expense-edit="${e.id}">
-              Edit
-            </button>
-            <button
-              type="button"
-              class="danger"
-              data-expense-delete="${e.id}">
-              Hapus
-            </button>
-          </div>
-        `).join('') || '-'}
-      </td>
-    </tr>
-  `).join('');
-
-  // Hitung total dana masuk dan keluar.
-  const totalMasuk = rows.reduce(
-    (sum, row) => sum + row.masuk, 0
-  );
-
-  const totalKeluar = rows.reduce(
-    (sum, row) => sum + row.keluar, 0
-  );
-
-  const saldoAkhir = totalMasuk - totalKeluar;
-
-  $('developmentReportFoot').innerHTML = `
-    <tr>
-      <td>TOTAL</td>
-      <td>${rupiah(totalMasuk)}</td>
-      <td>${rupiah(totalKeluar)}</td>
-      <td>${rupiah(saldoAkhir)}</td>
-      <td></td>
-    </tr>
-  `;
-
-  $('emptyDevelopmentReport').classList.toggle(
-    'hidden',
-    rows.length > 0
-  );
-}
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   async function showApp(user) {
     $('loginPanel').classList.add('hidden');
