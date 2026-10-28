@@ -227,6 +227,7 @@
     <nav>
       <button id="dashboardTab" class="primary">Dashboard</button>
       <button id="inputTab">Input Omzet</button>
+      <button id="developmentTab">Dana Pengembangan</button>
     </nav>
 
     <!-- HALAMAN 1: DASHBOARD DAN LAPORAN -->
@@ -308,6 +309,64 @@
             akan diperbarui setelah dikonfirmasi.
           </p>
         </form>
+      </div>
+    </section>
+
+    <!-- HALAMAN 3: DANA PENGEMBANGAN -->
+    <section id="developmentPage" class="hidden">
+      <div class="panel">
+        <h3 style="margin-top:0">Input Dana Pengembangan</h3>
+
+        <form id="developmentForm">
+          <label for="developmentDate">Tanggal</label>
+          <input id="developmentDate" type="date" required>
+
+          <label for="developmentType">Jenis Transaksi</label>
+          <select id="developmentType" required>
+            <option value="masuk">Dana Masuk</option>
+            <option value="keluar">Dana Keluar</option>
+          </select>
+
+          <label for="developmentAmount">Nominal (Rp)</label>
+          <input id="developmentAmount" type="number"
+            min="1" step="1" placeholder="Contoh: 100000" required>
+
+          <label for="developmentNote">Keterangan</label>
+          <input id="developmentNote" type="text"
+            placeholder="Contoh: Pembelian perlengkapan">
+
+          <button class="primary" id="saveDevelopmentBtn" type="submit">
+            Simpan Dana
+          </button>
+          <button id="cancelDevelopmentEditBtn" class="hidden" type="button">
+            Batal Edit
+          </button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0">Laporan Dana Pengembangan</h3>
+
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Tanggal</th>
+                <th>Dana Masuk</th>
+                <th>Dana Keluar</th>
+                <th>Keterangan</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="developmentReportBody"></tbody>
+            <tfoot id="developmentReportFoot"></tfoot>
+          </table>
+        </div>
+
+        <p id="emptyDevelopmentReport" class="muted">
+          Belum ada data dana pengembangan.
+        </p>
       </div>
     </section>
   </section>
