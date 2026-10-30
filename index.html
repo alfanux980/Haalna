@@ -388,6 +388,10 @@
   const $ = id => document.getElementById(id);
 
   let transactions = [];
+  
+  let developmentTransactions = [];
+  let editingDevelopmentId = null;
+  
   let settings = {
     operational_cost: 65000,
     capital_pct: 60,
@@ -447,7 +451,19 @@
     if (error) throw error;
 
     transactions = data || [];
+
+      const { data: developmentData, error: developmentError } =
+      await supabase
+      .from('development_expenses')
+      .select('*')
+      .order('expense_date', { ascending: false });
+
+    if (developmentError) throw developmentError;
+
+    developmentTransactions = developmentData || [];
+
     render();
+    renderDevelopmentReport();
   }
 
   function render() {
@@ -500,7 +516,68 @@
       </tr>`;
 
     $('emptyReport').classList.toggle('hidden', rows.length > 0);
+  function renderDevelopmentReport() {
+    const rows = developmentTransactions;
+
+    const totalMasuk = rows
+      .filter(t => t.transaction_type === 'masuk')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const totalKeluar = rows
+      .filter(t => t.transaction_type === 'keluar')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    $('developmentReportBody').innerHTML = rows.map((t, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${t.expense_date}</td>
+      <td>${t.transaction_type === 'masuk' ? rupiah(t.amount) : '-'}</td>
+      <td>${t.transaction_type === 'keluar' ? rupiah(t.amount) : '-'}</td>
+      <td>${escapeHTML(t.note || '-')}</td>
+      <td>
+        <div class="actions">
+          <button data-development-edit="${t.id}">Edit</button>
+          <button class="danger" data-development-delete="${t.id}">
+            Hapus
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  $('developmentReportFoot').innerHTML = `
+    <tr>
+      <td colspan="2">TOTAL</td>
+      <td>${rupiah(totalMasuk)}</td>
+      <td>${rupiah(totalKeluar)}</td>
+      <td colspan="2">Saldo: ${rupiah(totalMasuk - totalKeluar)}</td>
+    </tr>
+  `;
+
+  $('emptyDevelopmentReport').classList.toggle(
+    'hidden',
+    rows.length > 0
+  );
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[char]);
+}
+
+function resetDevelopmentForm() {
+  editingDevelopmentId = null;
+  $('developmentForm').reset();
+  $('developmentDate').value = new Date().toLocaleDateString('en-CA');
+  $('saveDevelopmentBtn').textContent = 'Simpan Dana';
+  $('cancelDevelopmentEditBtn').classList.add('hidden');
   }
+}
 
   function showPage(page) {
     const dashboard = page === 'dashboard';
@@ -574,6 +651,116 @@
   showPage('development');
   });
 
+  $('developmentForm').addEventListener('submit', async event => {
+  event.preventDefault();
+
+  const date = $('developmentDate').value;
+  const type = $('developmentType').value;
+  const amount = Number($('developmentAmount').value);
+  const note = $('developmentNote').value.trim();
+
+  if (!date || !['masuk', 'keluar'].includes(type) ||
+      !Number.isFinite(amount) || amount <= 0) {
+    return notify('Tanggal atau nominal tidak valid.', true);
+  }
+
+  const button = $('saveDevelopmentBtn');
+  button.disabled = true;
+
+  try {
+    const payload = {
+      expense_date: date,
+      transaction_type: type,
+      amount,
+      note
+    };
+
+    let result;
+
+    if (editingDevelopmentId !== null) {
+      result = await supabase
+        .from('development_expenses')
+        .update(payload)
+        .eq('id', editingDevelopmentId);
+    } else {
+      result = await supabase
+        .from('development_expenses')
+        .insert(payload);
+    }
+
+    if (result.error) throw result.error;
+
+    resetDevelopmentForm();
+    await loadData();
+    showPage('development');
+
+    notify('Dana pengembangan berhasil disimpan.');
+  } catch (error) {
+    notify('Gagal menyimpan dana: ' + error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$('cancelDevelopmentEditBtn').addEventListener('click', () => {
+  resetDevelopmentForm();
+});
+
+$('developmentForm').addEventListener('submit', async event => {
+  event.preventDefault();
+
+  const date = $('developmentDate').value;
+  const type = $('developmentType').value;
+  const amount = Number($('developmentAmount').value);
+  const note = $('developmentNote').value.trim();
+
+  if (!date || !['masuk', 'keluar'].includes(type) ||
+      !Number.isFinite(amount) || amount <= 0) {
+    return notify('Tanggal atau nominal tidak valid.', true);
+  }
+
+  const button = $('saveDevelopmentBtn');
+  button.disabled = true;
+
+  try {
+    const payload = {
+      expense_date: date,
+      transaction_type: type,
+      amount,
+      note
+    };
+
+    let result;
+
+    if (editingDevelopmentId !== null) {
+      result = await supabase
+        .from('development_expenses')
+        .update(payload)
+        .eq('id', editingDevelopmentId);
+    } else {
+      result = await supabase
+        .from('development_expenses')
+        .insert(payload);
+    }
+
+    if (result.error) throw result.error;
+
+    resetDevelopmentForm();
+    await loadData();
+    showPage('development');
+
+    notify('Dana pengembangan berhasil disimpan.');
+  } catch (error) {
+    notify('Gagal menyimpan dana: ' + error.message, true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$('cancelDevelopmentEditBtn').addEventListener('click', () => {
+  resetDevelopmentForm();
+});
+  
   function resetForm() {
     editingDate = null;
     $('transactionForm').reset();
@@ -696,7 +883,8 @@
   });
 
   $('date').value = new Date().toLocaleDateString('en-CA');
-  checkSession();
+  $('developmentDate').value = new Date().toLocaleDateString('en-CA');
+    checkSession();
 </script>
 
 <script>
