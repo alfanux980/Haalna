@@ -466,68 +466,68 @@
     renderDevelopmentReport();
   }
 
-  function render() {
-    const rows = transactions.map(t => ({
-      date: t.transaction_date,
-      ...calculate(t.omzet)
-    }));
+ function render() {
+  const rows = transactions.map(t => ({
+    date: t.transaction_date,
+    ...calculate(t.omzet)
+  }));
 
-    const sum = key =>
-      rows.reduce((total, row) => total + row[key], 0);
+  const sum = key =>
+    rows.reduce((total, row) => total + row[key], 0);
 
-    $('totalOmzet').textContent = rupiah(sum('omzet'));
-    $('totalDevelopment').textContent = rupiah(sum('development'));
+  $('totalOmzet').textContent = rupiah(sum('omzet'));
+  $('totalDevelopment').textContent = rupiah(sum('development'));
+  $('totalShare').textContent = rupiah(sum('hari'));
 
-    // Satu porsi saham 4%, bukan penjumlahan ketiga pemilik saham.
-    $('totalShare').textContent = rupiah(sum('hari'));
+  $('reportBody').innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.date}</td>
+      <td>${rupiah(r.omzet)}</td>
+      <td>${rupiah(r.operational)}</td>
+      <td>${rupiah(r.capital)}</td>
+      <td>${rupiah(r.store)}</td>
+      <td>${rupiah(r.development)}</td>
+      <td>${rupiah(r.hari)}</td>
+      <td>${rupiah(r.alfan)}</td>
+      <td>${rupiah(r.nadhir)}</td>
+      <td>
+        <div class="actions">
+          <button data-edit="${r.date}">Edit</button>
+          <button class="danger" data-delete="${r.date}">Hapus</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
 
-    $('reportBody').innerHTML = rows.map(r => `
-      <tr>
-        <td>${r.date}</td>
-        <td>${rupiah(r.omzet)}</td>
-        <td>${rupiah(r.operational)}</td>
-        <td>${rupiah(r.capital)}</td>
-        <td>${rupiah(r.store)}</td>
-        <td>${rupiah(r.development)}</td>
-        <td>${rupiah(r.hari)}</td>
-        <td>${rupiah(r.alfan)}</td>
-        <td>${rupiah(r.nadhir)}</td>
-        <td>
-          <div class="actions">
-            <button data-edit="${r.date}">Edit</button>
-            <button class="danger" data-delete="${r.date}">Hapus</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+  $('reportFoot').innerHTML = `
+    <tr>
+      <td>TOTAL</td>
+      <td>${rupiah(sum('omzet'))}</td>
+      <td>${rupiah(sum('operational'))}</td>
+      <td>${rupiah(sum('capital'))}</td>
+      <td>${rupiah(sum('store'))}</td>
+      <td>${rupiah(sum('development'))}</td>
+      <td>${rupiah(sum('hari'))}</td>
+      <td>${rupiah(sum('alfan'))}</td>
+      <td>${rupiah(sum('nadhir'))}</td>
+      <td></td>
+    </tr>`;
 
-    $('reportFoot').innerHTML = `
-      <tr>
-        <td>TOTAL</td>
-        <td>${rupiah(sum('omzet'))}</td>
-        <td>${rupiah(sum('operational'))}</td>
-        <td>${rupiah(sum('capital'))}</td>
-        <td>${rupiah(sum('store'))}</td>
-        <td>${rupiah(sum('development'))}</td>
-        <td>${rupiah(sum('hari'))}</td>
-        <td>${rupiah(sum('alfan'))}</td>
-        <td>${rupiah(sum('nadhir'))}</td>
-        <td></td>
-      </tr>`;
+  $('emptyReport').classList.toggle('hidden', rows.length > 0);
+}
 
-    $('emptyReport').classList.toggle('hidden', rows.length > 0);
-  function renderDevelopmentReport() {
-    const rows = developmentTransactions;
+function renderDevelopmentReport() {
+  const rows = developmentTransactions;
 
-    const totalMasuk = rows
-      .filter(t => t.transaction_type === 'masuk')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+  const totalMasuk = rows
+    .filter(t => t.transaction_type === 'masuk')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    const totalKeluar = rows
-      .filter(t => t.transaction_type === 'keluar')
-      .reduce((sum, t) => sum + Number(t.amount), 0);
+  const totalKeluar = rows
+    .filter(t => t.transaction_type === 'keluar')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    $('developmentReportBody').innerHTML = rows.map((t, index) => `
+  $('developmentReportBody').innerHTML = rows.map((t, index) => `
     <tr>
       <td>${index + 1}</td>
       <td>${t.expense_date}</td>
@@ -576,9 +576,8 @@ function resetDevelopmentForm() {
   $('developmentDate').value = new Date().toLocaleDateString('en-CA');
   $('saveDevelopmentBtn').textContent = 'Simpan Dana';
   $('cancelDevelopmentEditBtn').classList.add('hidden');
-  }
 }
-
+  
   function showPage(page) {
     const dashboard = page === 'dashboard';
     const input = page === 'input';
@@ -650,61 +649,6 @@ function resetDevelopmentForm() {
   $('developmentTab').addEventListener('click', () => {
   showPage('development');
   });
-
-  $('developmentForm').addEventListener('submit', async event => {
-  event.preventDefault();
-
-  const date = $('developmentDate').value;
-  const type = $('developmentType').value;
-  const amount = Number($('developmentAmount').value);
-  const note = $('developmentNote').value.trim();
-
-  if (!date || !['masuk', 'keluar'].includes(type) ||
-      !Number.isFinite(amount) || amount <= 0) {
-    return notify('Tanggal atau nominal tidak valid.', true);
-  }
-
-  const button = $('saveDevelopmentBtn');
-  button.disabled = true;
-
-  try {
-    const payload = {
-      expense_date: date,
-      transaction_type: type,
-      amount,
-      note
-    };
-
-    let result;
-
-    if (editingDevelopmentId !== null) {
-      result = await supabase
-        .from('development_expenses')
-        .update(payload)
-        .eq('id', editingDevelopmentId);
-    } else {
-      result = await supabase
-        .from('development_expenses')
-        .insert(payload);
-    }
-
-    if (result.error) throw result.error;
-
-    resetDevelopmentForm();
-    await loadData();
-    showPage('development');
-
-    notify('Dana pengembangan berhasil disimpan.');
-  } catch (error) {
-    notify('Gagal menyimpan dana: ' + error.message, true);
-  } finally {
-    button.disabled = false;
-  }
-});
-
-$('cancelDevelopmentEditBtn').addEventListener('click', () => {
-  resetDevelopmentForm();
-});
 
 $('developmentForm').addEventListener('submit', async event => {
   event.preventDefault();
