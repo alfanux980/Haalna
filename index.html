@@ -227,7 +227,7 @@
     <nav>
       <button id="dashboardTab" class="primary">Dashboard</button>
       <button id="inputTab">Input Omzet</button>
-      <button id="developmentTab">Dana Pengembangan</button>
+      <button id="developmentTab">Saham & Pengembangan</button>
     </nav>
 
     <!-- HALAMAN 1: DASHBOARD DAN LAPORAN -->
@@ -504,14 +504,18 @@
 
   function showPage(page) {
     const dashboard = page === 'dashboard';
+    const input = page === 'input';
+    const development = page === 'development';
 
     $('dashboardPage').classList.toggle('hidden', !dashboard);
-    $('inputPage').classList.toggle('hidden', dashboard);
+    $('inputPage').classList.toggle('hidden', !input);
+    $('developmentPage').classList.toggle('hidden', !development);
 
     $('dashboardTab').classList.toggle('primary', dashboard);
-    $('inputTab').classList.toggle('primary', !dashboard);
+    $('inputTab').classList.toggle('primary', input);
+    $('developmentTab').classList.toggle('primary', development);
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function showApp(user) {
@@ -564,6 +568,10 @@
   $('inputTab').addEventListener('click', () => {
     if (!editingDate) resetForm();
     showPage('input');
+  });
+
+  $('developmentTab').addEventListener('click', () => {
+  showPage('development');
   });
 
   function resetForm() {
