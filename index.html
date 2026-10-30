@@ -704,6 +704,54 @@ $('developmentForm').addEventListener('submit', async event => {
 $('cancelDevelopmentEditBtn').addEventListener('click', () => {
   resetDevelopmentForm();
 });
+
+$('developmentReportBody').addEventListener('click', async event => {
+  const editButton = event.target.closest('[data-development-edit]');
+  const deleteButton = event.target.closest('[data-development-delete]');
+
+  // EDIT TRANSAKSI
+  if (editButton) {
+    const id = editButton.dataset.developmentEdit;
+
+    const row = developmentTransactions.find(
+      t => String(t.id) === String(id)
+    );
+
+    if (!row) return;
+
+    editingDevelopmentId = row.id;
+    $('developmentDate').value = row.expense_date;
+    $('developmentType').value = row.transaction_type;
+    $('developmentAmount').value = row.amount;
+    $('developmentNote').value = row.note || '';
+
+    $('saveDevelopmentBtn').textContent = 'Simpan Perubahan';
+    $('cancelDevelopmentEditBtn').classList.remove('hidden');
+
+    showPage('development');
+  }
+
+  // HAPUS TRANSAKSI
+  if (deleteButton) {
+    const id = deleteButton.dataset.developmentDelete;
+
+    if (!confirm('Yakin ingin menghapus transaksi dana ini?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('development_expenses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await loadData();
+      notify('Transaksi dana berhasil dihapus.');
+    } catch (error) {
+      notify('Gagal menghapus dana: ' + error.message, true);
+    }
+  }
+});
   
   function resetForm() {
     editingDate = null;
